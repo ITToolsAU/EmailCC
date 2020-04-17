@@ -31,14 +31,27 @@ class TransportBuilder
      */
     protected $logger;
 
+    /**
+     * Core registry
+     *
+     * @var \Magento\Framework\Registry
+     */
+    protected $_coreRegistry = null;
+
+    protected $_state;
+
     public function __construct(
         \Magento\Customer\Api\CustomerRepositoryInterface $customerRepositoryInterface,
         \Magento\Customer\Model\Session $customerSession,
-        \Psr\Log\LoggerInterface $logger
+        \Psr\Log\LoggerInterface $logger,
+        \Magento\Framework\Registry $coreRegistry,
+        \Magento\Framework\App\State $state
     ) {
         $this->customerRepositoryInterface = $customerRepositoryInterface;
         $this->customerSession = $customerSession;
         $this->logger = $logger;
+        $this->_coreRegistry = $coreRegistry;
+        $this->_state = $state;
     }
 
     public function beforeGetTransport(
@@ -75,7 +88,15 @@ class TransportBuilder
      */
     public function getEmailCopyTo()
     {
-        $customerId = $this->getCustomerIdFromSession();
+        $area = $this->_state->getAreaCode();
+        if($area == \Magento\Framework\App\Area::AREA_ADMINHTML) {
+            $currentOrder = $this->_coreRegistry->registry('current_order');
+            if(is_object($currentOrder)) {
+                $customerId = $currentOrder->getCustomerId();
+            }
+        } else {
+            $customerId = $this->getCustomerIdFromSession();
+        }
         if (!$customerId) {
             return false;
         }
@@ -87,7 +108,7 @@ class TransportBuilder
             return false;
         }
 
-        $emailCc = $customer->getCustomAttribute('email_cc');
+        $emailCc = $customer->getCustomAttribute('invoice_email_cc');
         $customerEmailCC = $emailCc ? $emailCc->getValue() : null;
 
         // $this->logger->debug((string) __('Customer cc: %1', $customerEmailCC));
