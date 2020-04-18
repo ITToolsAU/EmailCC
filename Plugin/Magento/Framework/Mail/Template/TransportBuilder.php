@@ -22,47 +22,48 @@ class TransportBuilder
     protected $customerRepositoryInterface;
 
     /**
-     * @var \Magento\Customer\Model\Session
-     */
-    protected $customerSession;
-
-    /**
      * @var \Psr\Log\LoggerInterface
      */
     protected $logger;
 
-    /**
-     * Core registry
-     *
-     * @var \Magento\Framework\Registry
-     */
-    protected $_coreRegistry = null;
+    protected $isInvoice = false;
 
     protected $_state;
 
+    protected $scopeConfig;
+
     public function __construct(
         \Magento\Customer\Api\CustomerRepositoryInterface $customerRepositoryInterface,
-        \Magento\Customer\Model\Session $customerSession,
         \Psr\Log\LoggerInterface $logger,
-        \Magento\Framework\Registry $coreRegistry,
-        \Magento\Framework\App\State $state
+        \Magento\Framework\App\State $state,
+        \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
     ) {
         $this->customerRepositoryInterface = $customerRepositoryInterface;
-        $this->customerSession = $customerSession;
         $this->logger = $logger;
-        $this->_coreRegistry = $coreRegistry;
         $this->_state = $state;
+        $this->scopeConfig = $scopeConfig;
+    }
+
+    public function beforeSetTemplateVars($subject, $vars)
+    {
+        if(isset($vars['invoice'])) {
+            $this->isInvoice = $vars['invoice'];
+        }
+        return ['vars' => $vars];
     }
 
     public function beforeGetTransport(
         \Magento\Framework\Mail\Template\TransportBuilder $subject
     ) {
         try {
-            $ccEmailAddresses = $this->getEmailCopyTo();
-            if (!empty($ccEmailAddresses)) {
-                foreach ($ccEmailAddresses as $ccEmailAddress) {
-                    $subject->addCc(trim($ccEmailAddress));
-                    $this->logger->debug((string) __('Added customer CC: %1', trim($ccEmailAddress)));
+            $enabled = $this->scopeConfig->getValue('sales_email/invoice/invoice_cc_enabled');
+            if($enabled && $this->isInvoice) {
+                $ccEmailAddresses = $this->getEmailCopyTo();
+                if (!empty($ccEmailAddresses)) {
+                    foreach ($ccEmailAddresses as $ccEmailAddress) {
+                        $subject->addCc(trim($ccEmailAddress));
+                        $this->logger->debug((string)__('Added customer CC: %1', trim($ccEmailAddress)));
+                    }
                 }
             }
         } catch (\Exception $e) {
@@ -72,12 +73,13 @@ class TransportBuilder
     }
 
     /**
-     * Get customer id from session
+     * Get customer from invoice
      */
-    public function getCustomerIdFromSession()
+    public function getCustomerFromInvoice()
     {
-        if ($customer = $this->customerSession->getCustomer()) {
-            return $customer->getId();
+        $customer = $this->isInvoice->getOrder()->getCustomer();
+        if($customer->getId()) {
+            return $customer;
         }
         return null;
     }
@@ -88,50 +90,15 @@ class TransportBuilder
      */
     public function getEmailCopyTo()
     {
-        $area = $this->_state->getAreaCode();
-        if($area == \Magento\Framework\App\Area::AREA_ADMINHTML) {
-            $currentOrder = $this->_coreRegistry->registry('current_order');
-            if(is_object($currentOrder)) {
-                $customerId = $currentOrder->getCustomerId();
-            }
-        } else {
-            $customerId = $this->getCustomerIdFromSession();
-        }
-        if (!$customerId) {
+        $customer = $this->getCustomerFromInvoice();
+        if (is_null($customer)) {
             return false;
         }
-
-        // $this->logger->debug((string) __('Customer Id: %1', $customerId));
-
-        $customer = $this->getCustomerById($customerId);
-        if (!$customer) {
-            return false;
-        }
-
-        $emailCc = $customer->getCustomAttribute('invoice_email_cc');
-        $customerEmailCC = $emailCc ? $emailCc->getValue() : null;
-
-        // $this->logger->debug((string) __('Customer cc: %1', $customerEmailCC));
-
+        $customerEmailCC = $customer->getInvoiceEmailCc();
         if (!empty($customerEmailCC)) {
             return explode(',', trim($customerEmailCC));
         }
 
         return false;
-    }
-
-    /**
-     * Get customer by Id.
-     * @param int $customerId
-     * @return \Magento\Customer\Model\Data\Customer
-     */
-    public function getCustomerById($customerId)
-    {
-        try {
-            return $this->customerRepositoryInterface->getById($customerId);
-        } catch (\Exception $e) {
-            $this->logger->critical($e);
-            return false;
-        }
     }
 }
