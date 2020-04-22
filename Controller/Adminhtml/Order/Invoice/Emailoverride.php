@@ -1,39 +1,36 @@
 <?php
 
-namespace Xigen\CC\Controller\Adminhtml\Invoice;
+namespace Xigen\CC\Controller\Adminhtml\Order\Invoice;
 
+    use Xigen\CC\Registry\OverrideEmail;
 
 /**
  * Class Email
  *
  * @package Xigen\CC\Controller\Adminhtml\Invoice
  */
-class Email extends \Magento\Backend\App\Action
+class Emailoverride extends \Magento\Sales\Controller\Adminhtml\Order\Invoice\Email
 {
+
     /**
-     * Authorization level of a basic admin session
-     *
-     * @see _isAllowed()
+     * @var OverrideEmail
      */
-    const ADMIN_RESOURCE = 'Magento_Sales::sales_invoice';
+    private $overrideEmail;
 
     /**
      * @var \Magento\Backend\Model\View\Result\ForwardFactory
      */
     protected $resultForwardFactory;
 
-    /**
-     * @param \Magento\Backend\App\Action\Context $context
-     * @param \Magento\Backend\Model\View\Result\ForwardFactory $resultForwardFactory
-     */
     public function __construct(
         \Magento\Backend\App\Action\Context $context,
-        \Magento\Backend\Model\View\Result\ForwardFactory $resultForwardFactory
+        \Magento\Backend\Model\View\Result\ForwardFactory $resultForwardFactory,
+        OverrideEmail $overrideEmail
     ) {
-        parent::__construct($context);
+        $this->overrideEmail = $overrideEmail;
         $this->resultForwardFactory = $resultForwardFactory;
+        parent::__construct($context, $resultForwardFactory);
     }
-
     /**
      * Notify user
      *
@@ -49,12 +46,17 @@ class Email extends \Magento\Backend\App\Action
         if (!$invoice) {
             return $this->resultForwardFactory->create()->forward('noroute');
         }
+        $email = base64_decode($this->getRequest()->getParam('data'));
+        if (!\Zend_Validate::is(trim($email), 'EmailAddress')) {
+            return $this->resultForwardFactory->create()->forward('noroute');
+        }
+        $this->overrideEmail->set($email);
 
         $this->_objectManager->create(
             \Magento\Sales\Api\InvoiceManagementInterface::class
         )->notify($invoice->getEntityId());
 
-        $this->messageManager->addSuccessMessage(__('You sent the message.'));
+        $this->messageManager->addSuccessMessage(__('You sent the invoice to: ' . $email));
         return $this->resultRedirectFactory->create()->setPath(
             'sales/invoice/view',
             ['order_id' => $invoice->getOrder()->getId(), 'invoice_id' => $invoiceId]

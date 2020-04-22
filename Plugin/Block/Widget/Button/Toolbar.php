@@ -85,7 +85,7 @@ class Toolbar
     public function getEmailUrl()
     {
         return $this->getUrl(
-            'sales/*/emailoverride',
+            'invoicecc/*/emailoverride',
             ['order_id' => $this->getInvoice()->getOrder()->getId(), 'invoice_id' => $this->getInvoice()->getId()]
         );
     }

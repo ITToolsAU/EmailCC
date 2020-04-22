@@ -11,6 +11,8 @@
 
 namespace Xigen\CC\Plugin\Magento\Framework\Mail\Template;
 
+use Xigen\CC\Registry\OverrideEmail;
+
 /**
  * Plugin to add customer email cc
  */
@@ -32,21 +34,30 @@ class TransportBuilder
 
     protected $scopeConfig;
 
+    /**
+     * @var OverrideEmail
+     */
+    private $overrideEmail;
+
     public function __construct(
         \Magento\Customer\Api\CustomerRepositoryInterface $customerRepositoryInterface,
         \Psr\Log\LoggerInterface $logger,
         \Magento\Framework\App\State $state,
-        \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig
-    ) {
+        \Magento\Framework\App\Config\ScopeConfigInterface $scopeConfig,
+        OverrideEmail $overrideEmail
+
+    )
+    {
         $this->customerRepositoryInterface = $customerRepositoryInterface;
         $this->logger = $logger;
         $this->_state = $state;
         $this->scopeConfig = $scopeConfig;
+        $this->overrideEmail = $overrideEmail;
     }
 
     public function beforeSetTemplateVars($subject, $vars)
     {
-        if(isset($vars['invoice'])) {
+        if (isset($vars['invoice'])) {
             $this->isInvoice = $vars['invoice'];
         }
         return ['vars' => $vars];
@@ -54,11 +65,18 @@ class TransportBuilder
 
     public function beforeGetTransport(
         \Magento\Framework\Mail\Template\TransportBuilder $subject
-    ) {
+    )
+    {
         try {
             $enabled = $this->scopeConfig->getValue('sales_email/invoice/invoice_cc_enabled');
-            if($enabled && $this->isInvoice) {
+            if ($enabled && $this->isInvoice) {
+                $overrideEmail = $this->overrideEmail->get();
                 $ccEmailAddresses = $this->getEmailCopyTo();
+                if (count($overrideEmail) > 0) {
+                    $first = array_shift($overrideEmail);
+                    $subject->addTo(trim($first));
+                    $ccEmailAddresses = $overrideEmail;
+                }
                 if (!empty($ccEmailAddresses)) {
                     foreach ($ccEmailAddresses as $ccEmailAddress) {
                         $subject->addCc(trim($ccEmailAddress));
@@ -67,7 +85,7 @@ class TransportBuilder
                 }
             }
         } catch (\Exception $e) {
-            $this->logger->error((string) __('Failure to add customer CC: %1', $e->getMessage()));
+            $this->logger->error((string)__('Failure to add customer CC: %1', $e->getMessage()));
         }
         return [];
     }
@@ -78,7 +96,7 @@ class TransportBuilder
     public function getCustomerFromInvoice()
     {
         $customer = $this->isInvoice->getOrder()->getCustomer();
-        if($customer->getId()) {
+        if ($customer->getId()) {
             return $customer;
         }
         return null;
@@ -100,5 +118,18 @@ class TransportBuilder
         }
 
         return false;
+    }
+
+    public function beforeAddTo($subject, $address, $name = '')
+    {
+        $overrideEmail = $this->overrideEmail->get();
+        if (count($overrideEmail) > 0) {
+            $first = array_shift($overrideEmail);
+            if($first != $address) {
+                return [[], ''];
+            }
+        }
+
+        return [$address, $name];
     }
 }
