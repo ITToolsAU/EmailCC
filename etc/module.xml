@@ -4,7 +4,7 @@
         <sequence>
             <module name="Magento_Customer"/>
             <module name="Magento_Framework"/>
-            <module name="Amazon_Payment"/>
+            <module name="Magento_Sales"/>
         </sequence>
     </module>
 </config>
