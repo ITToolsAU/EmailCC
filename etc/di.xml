@@ -3,4 +3,5 @@
     <type name="Magento\Framework\Mail\Template\TransportBuilder">
         <plugin disabled="false" name="Xigen_CC_Plugin_Magento_Framework_Mail_Template_TransportBuilder" sortOrder="10" type="Xigen\CC\Plugin\Magento\Framework\Mail\Template\TransportBuilder"/>
     </type>
+    <preference for="Magento\Sales\Controller\Adminhtml\Invoice\Email" type="Xigen_CC\Controller\Adminhtml\Invoice\Email" />
 </config>

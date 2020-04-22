@@ -1,15 +1,14 @@
 <?php
 
-namespace Xigen\CC\Controller\Adminhtml\Invoice\AbstractInvoice;
+namespace Xigen\CC\Controller\Adminhtml\Invoice;
 
-use \Magento\Sales\Controller\Adminhtml\Invoice\AbstractInvoice;
 
 /**
  * Class Email
  *
- * @package Xigen\CC\Controller\Adminhtml\Invoice\AbstractInvoice
+ * @package Xigen\CC\Controller\Adminhtml\Invoice
  */
-class Email extends Magento\Sales\Controller\Adminhtml\Invoice\AbstractInvoice
+class Email extends \Magento\Backend\App\Action
 {
     /**
      * Authorization level of a basic admin session
