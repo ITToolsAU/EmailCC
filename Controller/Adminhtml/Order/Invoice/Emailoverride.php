@@ -48,7 +48,11 @@ class Emailoverride extends \Magento\Sales\Controller\Adminhtml\Order\Invoice\Em
         }
         $email = base64_decode($this->getRequest()->getParam('data'));
         if (!\Zend_Validate::is(trim($email), 'EmailAddress')) {
-            return $this->resultForwardFactory->create()->forward('noroute');
+            $this->messageManager->addErrorMessage(__('Not a valid email: ' . $email));
+            return $this->resultRedirectFactory->create()->setPath(
+                'sales/invoice/view',
+                ['order_id' => $invoice->getOrder()->getId(), 'invoice_id' => $invoiceId]
+            );
         }
         $this->overrideEmail->set($email);
 

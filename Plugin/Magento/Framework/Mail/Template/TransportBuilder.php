@@ -71,12 +71,7 @@ class TransportBuilder
             $enabled = $this->scopeConfig->getValue('sales_email/invoice/invoice_cc_enabled');
             if ($enabled && $this->isInvoice) {
                 $overrideEmail = $this->overrideEmail->get();
-                $ccEmailAddresses = $this->getEmailCopyTo();
-                if (count($overrideEmail) > 0) {
-                    $first = array_shift($overrideEmail);
-                    $subject->addTo(trim($first));
-                    $ccEmailAddresses = $overrideEmail;
-                }
+                $ccEmailAddresses = (count($overrideEmail) > 0) ? $overrideEmail : $this->getEmailCopyTo();
                 if (!empty($ccEmailAddresses)) {
                     foreach ($ccEmailAddresses as $ccEmailAddress) {
                         $subject->addCc(trim($ccEmailAddress));
@@ -120,16 +115,16 @@ class TransportBuilder
         return false;
     }
 
-    public function beforeAddTo($subject, $address, $name = '')
-    {
-        $overrideEmail = $this->overrideEmail->get();
-        if (count($overrideEmail) > 0) {
-            $first = array_shift($overrideEmail);
-            if($first != $address) {
-                return [[], ''];
-            }
-        }
-
-        return [$address, $name];
-    }
+//    public function beforeAddTo($subject, $address, $name = '')
+//    {
+//        $overrideEmail = $this->overrideEmail->get();
+//        if (count($overrideEmail) > 0) {
+//            $first = array_shift($overrideEmail);
+//            if($first == $address) {
+//                return [[], ''];
+//            }
+//        }
+//
+//        return [$address, $name];
+//    }
 }

@@ -1,9 +1,9 @@
 {
     "name": "dominicwatts/emailcc",
-    "description": "Add email cc field to customer account area. Transactional emails are also sent to this address.",
+    "description": "Add email cc field to customer account area. Invoice emails are also sent to this address.",
     "type": "magento2-module",
     "license": "OSL-3.0",
-    "version": "2.0.1",
+    "version": "2.0.2",
     "authors": [
         {
             "name": "Dominic Xigen",
