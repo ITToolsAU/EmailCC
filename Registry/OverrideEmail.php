@@ -11,12 +11,12 @@ class OverrideEmail
 
     public function set(string $email): void
     {
-        $this->email = $email;
+        $this->email = (string) $email;
     }
 
     public function get(): array
     {
-        return explode(',', $this->email);
+        return array_filter(explode(',', $this->email));
     }
 
 }
