@@ -115,16 +115,4 @@ class TransportBuilder
         return false;
     }
 
-//    public function beforeAddTo($subject, $address, $name = '')
-//    {
-//        $overrideEmail = $this->overrideEmail->get();
-//        if (count($overrideEmail) > 0) {
-//            $first = array_shift($overrideEmail);
-//            if($first == $address) {
-//                return [[], ''];
-//            }
-//        }
-//
-//        return [$address, $name];
-//    }
 }

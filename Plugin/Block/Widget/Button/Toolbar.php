@@ -63,7 +63,7 @@ class Toolbar
     prompt({
         title: 'Override Recipient',
         validation: false,
-        content: 'Enter override email address, or leave blank / click cancel, for normal operations',
+        content: 'Enter email address invoice will be CC\'d to, or leave blank / click cancel, for normal operations',
         actions: {
             confirm: function(data){ if(data == '') { " . $buttonOnClick . " } else { document.location = '" . $this->getEmailUrl() . "data/'+window.btoa(data) } },
             cancel: function(){ " . $buttonOnClick . " },
