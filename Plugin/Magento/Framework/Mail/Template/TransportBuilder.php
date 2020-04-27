@@ -39,6 +39,8 @@ class TransportBuilder
      */
     private $overrideEmail;
 
+    protected $customerrepository;
+
     public function __construct(
         \Magento\Customer\Api\CustomerRepositoryInterface $customerRepositoryInterface,
         \Psr\Log\LoggerInterface $logger,
@@ -90,10 +92,12 @@ class TransportBuilder
      */
     public function getCustomerFromInvoice()
     {
-        $customer = $this->isInvoice->getOrder()->getCustomer();
+        $customer = $this->customerRepositoryInterface->getById($this->isInvoice->getOrder()->getCustomerId());
         if ($customer->getId()) {
             return $customer;
         }
+        $this->logger->error((string)__('Failure to load customer from given invoice: %1 using customer id %1',
+            $this->isInvoice->getId(), $this->isInvoice->getOrder()->getCustomerId()));
         return null;
     }
 
@@ -107,11 +111,12 @@ class TransportBuilder
         if (is_null($customer)) {
             return false;
         }
-        $customerEmailCC = $customer->getInvoiceEmailCc();
+        $customerEmailCC = $customer->getCustomAttribute('invoice_email_cc')->getValue();
         if (!empty($customerEmailCC)) {
             return explode(',', trim($customerEmailCC));
         }
 
+        $this->logger->error((string)__('Failure to load customer from given invoice: '));
         return false;
     }
 
