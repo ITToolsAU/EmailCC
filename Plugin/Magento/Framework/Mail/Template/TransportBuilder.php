@@ -111,12 +111,11 @@ class TransportBuilder
         if (is_null($customer)) {
             return false;
         }
-        $customerEmailCC = $customer->getCustomAttribute('invoice_email_cc')->getValue();
-        if (!empty($customerEmailCC)) {
-            return explode(',', trim($customerEmailCC));
+        $customerEmailCC = $customer->getCustomAttribute('invoice_email_cc');
+        if (is_object($customerEmailCC)) {
+            return explode(',', trim($customerEmailCC->getValue()));
         }
 
-        $this->logger->error((string)__('Failure to load customer from given invoice: '));
         return false;
     }
 
